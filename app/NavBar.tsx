@@ -21,7 +21,14 @@ const NavBar = () => {
           </li>
           {status === "authenticated" && (
             <li>
-              <p>{session.user!.name}</p>
+              <details>
+                <summary>{session.user!.name}</summary>
+                <ul className="rounded-t-none bg-base-100 p-2">
+                  <li>
+                    <Link href="/api/auth/signout">Sign Out</Link>
+                  </li>
+                </ul>
+              </details>
             </li>
           )}
           {status === "unauthenticated" && (

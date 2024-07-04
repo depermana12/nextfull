@@ -2,6 +2,8 @@ import type { Metadata } from "next";
 import { ReactNode } from "react";
 import { Inter } from "next/font/google";
 import "./globals.css";
+import AuthProvider from "./auth/Provider";
+
 import NavBar from "./NavBar";
 import Footer from "./Footer";
 
@@ -20,9 +22,11 @@ export default function RootLayout({
   return (
     <html lang="en" data-theme="dracula">
       <body className={inter.className}>
-        <NavBar />
-        <main className="p-5">{children}</main>
-        <Footer />
+        <AuthProvider>
+          <NavBar />
+          <main className="p-5">{children}</main>
+          <Footer />
+        </AuthProvider>
       </body>
     </html>
   );

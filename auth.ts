@@ -1,5 +1,4 @@
 import NextAuth from "next-auth";
-import { ZodError } from "zod";
 import { signInSchema } from "@/lib/zod";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
@@ -22,33 +21,22 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         },
       },
       authorize: async (credentials, request) => {
-        try {
-          if (!credentials?.email || !credentials.password) return null;
+        if (!credentials?.email || !credentials.password) return null;
 
-          const { email, password } =
-            await signInSchema.parseAsync(credentials);
+        const { email, password } = await signInSchema.parseAsync(credentials);
 
-          const user = await db.user.findUnique({ where: { email } });
+        const user = await db.user.findUnique({ where: { email } });
 
-          if (!user) {
-            throw new Error("User not found.");
-          }
-
-          const passwordMatch = await comparePassword(
-            password,
-            user.hashedPassword!,
-          );
-
-          if (!passwordMatch) {
-            throw new Error("Invalid password.");
-          }
-
-          return user;
-        } catch (error) {
-          if (error instanceof ZodError) {
-            return null;
-          }
+        if (!user) {
+          throw new Error("User not found.");
         }
+
+        const passwordMatch = await comparePassword(
+          password,
+          user.hashedPassword!,
+        );
+
+        return passwordMatch ? user : null;
       },
     }),
     Google({

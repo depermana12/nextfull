@@ -1,14 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
-import schema from "../schema";
+import { userSchema } from "@/lib/zod";
 import db from "@/utils/db";
 
 export const GET = async (
   request: NextRequest,
   { params }: { params: { id: string } },
 ) => {
-  const id = Number(params.id);
   const user = await db.user.findUnique({
-    where: { id },
+    where: { id: params.id },
   });
 
   if (!user) {
@@ -23,14 +22,13 @@ export const PUT = async (
 ) => {
   const body = await request.json();
 
-  const validation = schema.safeParse(body);
+  const validation = userSchema.safeParse(body);
   if (!validation.success) {
     return NextResponse.json(validation.error.errors, { status: 400 });
   }
 
-  const id = Number(params.id);
   const user = await db.user.findUnique({
-    where: { id },
+    where: { id: params.id },
   });
 
   if (!user) {
@@ -52,9 +50,8 @@ export const DELETE = async (
   request: NextRequest,
   { params }: { params: { id: string } },
 ) => {
-  const id = Number(params.id);
   const user = await db.user.findUnique({
-    where: { id },
+    where: { id: params.id },
   });
 
   if (!user) {

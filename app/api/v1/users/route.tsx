@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import schema from "./schema";
+import { userSchema } from "@/lib/zod";
 import db from "@/utils/db";
 
 export const GET = async (request: NextRequest) => {
@@ -14,7 +14,7 @@ export const GET = async (request: NextRequest) => {
 
 export const POST = async (request: NextRequest) => {
   const body = await request.json();
-  const validation = schema.safeParse(body);
+  const validation = userSchema.safeParse(body);
 
   if (!validation.success) {
     return NextResponse.json({ error: "Nama is required" }, { status: 400 });

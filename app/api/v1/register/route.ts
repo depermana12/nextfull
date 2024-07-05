@@ -1,17 +1,12 @@
 import { NextRequest, NextResponse } from "next/server";
-import { z } from "zod";
 import db from "@/utils/db";
-import bcrypt from "bcrypt";
-
-const schema = z.object({
-  email: z.string().email(),
-  password: z.string().min(5),
-});
+import { saltAndHashPassword } from "@/utils/password";
+import { signInSchema } from "@/lib/zod";
 
 export const POST = async (request: NextRequest) => {
   const body = await request.json();
 
-  const validation = schema.safeParse(body);
+  const validation = signInSchema.safeParse(body);
 
   if (!validation.success) {
     return NextResponse.json(validation.error.errors, { status: 400 });
@@ -25,7 +20,7 @@ export const POST = async (request: NextRequest) => {
     return NextResponse.json({ error: "User already exists" }, { status: 400 });
   }
 
-  const hashedPassword = await bcrypt.hash(body.password, 12);
+  const hashedPassword = await saltAndHashPassword(body.password);
   const newUser = await db.user.create({
     data: {
       email: body.email,

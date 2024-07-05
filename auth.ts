@@ -1,9 +1,12 @@
 import NextAuth from "next-auth";
+import { ZodError } from "zod";
+import { signInSchema } from "@/lib/zod";
 import Google from "next-auth/providers/google";
 import Credentials from "next-auth/providers/credentials";
 import { PrismaAdapter } from "@auth/prisma-adapter";
 import { PrismaClient } from "@prisma/client";
-import bcrypt from "bcrypt";
+import { comparePassword } from "@/utils/password";
+import db from "@/utils/db";
 
 const prisma = new PrismaClient();
 
@@ -12,40 +15,40 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
   providers: [
     Credentials({
       credentials: {
-        email: { label: "Email", type: "email", placeholder: "Email" },
+        email: { label: "Username" },
         password: {
           label: "Password",
           type: "password",
-          placeholder: "Password",
         },
       },
-      authorize: async (credentials) => {
-        if (!credentials?.email || !credentials.password) return null;
+      authorize: async (credentials, request) => {
+        try {
+          if (!credentials?.email || !credentials.password) return null;
 
-        const user = (await prisma.user.findUnique({
-          where: { email: credentials.email as string },
-        })) as {
-          id: string;
-          name: string | null;
-          email: string;
-          emailVerified: Date | null;
-          image: string | null;
-          createdAt: Date;
-          updatedAt: Date;
-          hashedPassword: string;
-        };
+          const { email, password } =
+            await signInSchema.parseAsync(credentials);
 
-        if (!user) {
-          // No user found, so this is their first attempt to login
-          // meaning this is also the place you could do registration
-          throw new Error("User not found.");
+          const user = await db.user.findUnique({ where: { email } });
+
+          if (!user) {
+            throw new Error("User not found.");
+          }
+
+          const passwordMatch = await comparePassword(
+            password,
+            user.hashedPassword!,
+          );
+
+          if (!passwordMatch) {
+            throw new Error("Invalid password.");
+          }
+
+          return user;
+        } catch (error) {
+          if (error instanceof ZodError) {
+            return null;
+          }
         }
-        const passwordMatch = await bcrypt.compare(
-          credentials.password as string,
-          user.hashedPassword,
-        );
-
-        return passwordMatch ? user : null;
       },
     }),
     Google({
@@ -58,4 +61,7 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
       },
     }),
   ],
+  session: {
+    strategy: "jwt",
+  },
 });

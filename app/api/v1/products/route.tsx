@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import schema from "./schema";
+import { productSchema } from "@/lib/zod";
 import db from "@/utils/db";
 
 export const GET = async (request: NextRequest) => {
@@ -13,7 +13,7 @@ export const GET = async (request: NextRequest) => {
 };
 export const POST = async (request: NextRequest) => {
   const body = await request.json();
-  const validation = schema.safeParse(body);
+  const validation = productSchema.safeParse(body);
   if (!validation.success) {
     return NextResponse.json(validation.error.errors, { status: 404 });
   }
